@@ -1,0 +1,409 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>見積計算ツール</title>
+    <style>
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Hiragino Sans', 'Noto Sans JP', sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 20px;
+        }
+
+        .container {
+            max-width: 600px;
+            margin: 0 auto;
+        }
+
+        h1 {
+            color: white;
+            text-align: center;
+            margin-bottom: 20px;
+            font-size: 1.5rem;
+            text-shadow: 0 2px 4px rgba(0,0,0,0.2);
+        }
+
+        .card {
+            background: white;
+            border-radius: 16px;
+            padding: 20px;
+            margin-bottom: 16px;
+            box-shadow: 0 4px 20px rgba(0,0,0,0.15);
+        }
+
+        .card-title {
+            font-size: 1.1rem;
+            font-weight: 600;
+            color: #333;
+            margin-bottom: 16px;
+            padding-bottom: 10px;
+            border-bottom: 2px solid #667eea;
+        }
+
+        .input-group {
+            margin-bottom: 16px;
+        }
+
+        .input-group label {
+            display: block;
+            font-size: 0.9rem;
+            color: #555;
+            margin-bottom: 6px;
+            font-weight: 500;
+        }
+
+        .input-row {
+            display: flex;
+            gap: 10px;
+            align-items: center;
+        }
+
+        .input-row input {
+            flex: 1;
+        }
+
+        .input-row .unit {
+            font-size: 0.9rem;
+            color: #666;
+            white-space: nowrap;
+        }
+
+        input[type="number"],
+        input[type="text"] {
+            width: 100%;
+            padding: 12px 14px;
+            border: 2px solid #e0e0e0;
+            border-radius: 10px;
+            font-size: 1rem;
+            transition: border-color 0.2s, box-shadow 0.2s;
+        }
+
+        input[type="number"]:focus,
+        input[type="text"]:focus {
+            outline: none;
+            border-color: #667eea;
+            box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.2);
+        }
+
+        .result-box {
+            background: linear-gradient(135deg, #f5f7fa 0%, #e4e8eb 100%);
+            border-radius: 10px;
+            padding: 12px 16px;
+            margin-top: 12px;
+        }
+
+        .result-row {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 8px 0;
+        }
+
+        .result-row:not(:last-child) {
+            border-bottom: 1px solid #ddd;
+        }
+
+        .result-label {
+            font-size: 0.9rem;
+            color: #555;
+        }
+
+        .result-value {
+            font-size: 1.1rem;
+            font-weight: 600;
+            color: #333;
+        }
+
+        .result-value.profit {
+            color: #22c55e;
+        }
+
+        .result-value.total {
+            color: #667eea;
+            font-size: 1.2rem;
+        }
+
+        .total-section {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+        }
+
+        .total-section .card-title {
+            color: white;
+            border-bottom-color: rgba(255,255,255,0.3);
+        }
+
+        .grand-total {
+            text-align: center;
+            padding: 20px;
+        }
+
+        .grand-total-label {
+            font-size: 1rem;
+            opacity: 0.9;
+            margin-bottom: 8px;
+        }
+
+        .grand-total-value {
+            font-size: 2rem;
+            font-weight: 700;
+        }
+
+        .breakdown {
+            background: rgba(255,255,255,0.15);
+            border-radius: 10px;
+            padding: 12px 16px;
+            margin-top: 16px;
+        }
+
+        .breakdown-row {
+            display: flex;
+            justify-content: space-between;
+            padding: 6px 0;
+            font-size: 0.9rem;
+        }
+
+        .breakdown-row.highlight {
+            font-weight: 600;
+            border-top: 1px solid rgba(255,255,255,0.3);
+            margin-top: 8px;
+            padding-top: 12px;
+        }
+
+        .clear-btn {
+            width: 100%;
+            padding: 14px;
+            background: #ff6b6b;
+            color: white;
+            border: none;
+            border-radius: 10px;
+            font-size: 1rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: background 0.2s, transform 0.1s;
+            margin-top: 10px;
+        }
+
+        .clear-btn:hover {
+            background: #ee5a5a;
+        }
+
+        .clear-btn:active {
+            transform: scale(0.98);
+        }
+
+        .note {
+            font-size: 0.8rem;
+            color: #888;
+            margin-top: 6px;
+        }
+
+        @media (max-width: 400px) {
+            body {
+                padding: 12px;
+            }
+
+            .card {
+                padding: 16px;
+            }
+
+            h1 {
+                font-size: 1.3rem;
+            }
+
+            .grand-total-value {
+                font-size: 1.6rem;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>📊 見積計算ツール</h1>
+
+        <!-- 協力業者見積（利益率上乗せ） -->
+        <div class="card">
+            <div class="card-title">🏢 協力業者見積（利益上乗せ）</div>
+            
+            <div class="input-group">
+                <label>原価（協力業者見積金額）</label>
+                <div class="input-row">
+                    <input type="number" id="cost" placeholder="0" min="0" oninput="calculate()">
+                    <span class="unit">円</span>
+                </div>
+            </div>
+
+            <div class="input-group">
+                <label>利益率</label>
+                <div class="input-row">
+                    <input type="number" id="profitRate" placeholder="10" min="0" max="100" value="10" oninput="calculate()">
+                    <span class="unit">%</span>
+                </div>
+                <div class="note">※ 原価に対する利益率を設定</div>
+            </div>
+
+            <div class="result-box">
+                <div class="result-row">
+                    <span class="result-label">原価</span>
+                    <span class="result-value" id="displayCost">¥0</span>
+                </div>
+                <div class="result-row">
+                    <span class="result-label">利益</span>
+                    <span class="result-value profit" id="displayProfit">¥0</span>
+                </div>
+                <div class="result-row">
+                    <span class="result-label">小計（税抜）</span>
+                    <span class="result-value total" id="displaySubtotal">¥0</span>
+                </div>
+            </div>
+        </div>
+
+        <!-- 産業廃棄物（利益上乗せなし） -->
+        <div class="card">
+            <div class="card-title">🗑️ 産業廃棄物処理費</div>
+            
+            <div class="input-group">
+                <label>金額（利益上乗せなし）</label>
+                <div class="input-row">
+                    <input type="number" id="wasteDisposal" placeholder="0" min="0" oninput="calculate()">
+                    <span class="unit">円</span>
+                </div>
+                <div class="note">※ そのまま合計に加算されます</div>
+            </div>
+
+            <div class="result-box">
+                <div class="result-row">
+                    <span class="result-label">産業廃棄物処理費</span>
+                    <span class="result-value" id="displayWaste">¥0</span>
+                </div>
+            </div>
+        </div>
+
+        <!-- 気中濃度測定（利益上乗せなし） -->
+        <div class="card">
+            <div class="card-title">🔬 気中濃度測定費</div>
+            
+            <div class="input-group">
+                <label>金額（利益上乗せなし）</label>
+                <div class="input-row">
+                    <input type="number" id="airMeasurement" placeholder="0" min="0" oninput="calculate()">
+                    <span class="unit">円</span>
+                </div>
+                <div class="note">※ そのまま合計に加算されます</div>
+            </div>
+
+            <div class="result-box">
+                <div class="result-row">
+                    <span class="result-label">気中濃度測定費</span>
+                    <span class="result-value" id="displayAir">¥0</span>
+                </div>
+            </div>
+        </div>
+
+        <!-- 合計 -->
+        <div class="card total-section">
+            <div class="card-title">💰 合計金額</div>
+            
+            <div class="grand-total">
+                <div class="grand-total-label">見積合計（税抜）</div>
+                <div class="grand-total-value" id="grandTotal">¥0</div>
+            </div>
+
+            <div class="breakdown">
+                <div class="breakdown-row">
+                    <span>協力業者原価</span>
+                    <span id="breakdownCost">¥0</span>
+                </div>
+                <div class="breakdown-row">
+                    <span>自社利益</span>
+                    <span id="breakdownProfit">¥0</span>
+                </div>
+                <div class="breakdown-row">
+                    <span>産業廃棄物処理費</span>
+                    <span id="breakdownWaste">¥0</span>
+                </div>
+                <div class="breakdown-row">
+                    <span>気中濃度測定費</span>
+                    <span id="breakdownAir">¥0</span>
+                </div>
+                <div class="breakdown-row highlight">
+                    <span>合計</span>
+                    <span id="breakdownTotal">¥0</span>
+                </div>
+            </div>
+
+            <button class="clear-btn" onclick="clearAll()">🔄 クリア</button>
+        </div>
+    </div>
+
+    <script>
+        // 数値をカンマ区切りの円表示にフォーマット
+        function formatCurrency(value) {
+            return '¥' + Math.floor(value).toLocaleString('ja-JP');
+        }
+
+        // 入力値を数値として取得（空や無効な場合は0）
+        function getInputValue(id) {
+            const value = parseFloat(document.getElementById(id).value);
+            return isNaN(value) ? 0 : value;
+        }
+
+        // 計算処理
+        function calculate() {
+            // 入力値の取得
+            const cost = getInputValue('cost');
+            const profitRate = getInputValue('profitRate');
+            const wasteDisposal = getInputValue('wasteDisposal');
+            const airMeasurement = getInputValue('airMeasurement');
+
+            // 利益計算（原価 × 利益率）
+            const profit = cost * (profitRate / 100);
+            
+            // 小計（原価 + 利益）
+            const subtotal = cost + profit;
+
+            // 合計（小計 + 産業廃棄物 + 気中濃度測定）
+            const grandTotal = subtotal + wasteDisposal + airMeasurement;
+
+            // 協力業者見積セクションの表示更新
+            document.getElementById('displayCost').textContent = formatCurrency(cost);
+            document.getElementById('displayProfit').textContent = formatCurrency(profit);
+            document.getElementById('displaySubtotal').textContent = formatCurrency(subtotal);
+
+            // 産業廃棄物セクションの表示更新
+            document.getElementById('displayWaste').textContent = formatCurrency(wasteDisposal);
+
+            // 気中濃度測定セクションの表示更新
+            document.getElementById('displayAir').textContent = formatCurrency(airMeasurement);
+
+            // 合計セクションの表示更新
+            document.getElementById('grandTotal').textContent = formatCurrency(grandTotal);
+            document.getElementById('breakdownCost').textContent = formatCurrency(cost);
+            document.getElementById('breakdownProfit').textContent = formatCurrency(profit);
+            document.getElementById('breakdownWaste').textContent = formatCurrency(wasteDisposal);
+            document.getElementById('breakdownAir').textContent = formatCurrency(airMeasurement);
+            document.getElementById('breakdownTotal').textContent = formatCurrency(grandTotal);
+        }
+
+        // 全入力をクリア
+        function clearAll() {
+            document.getElementById('cost').value = '';
+            document.getElementById('profitRate').value = '10';
+            document.getElementById('wasteDisposal').value = '';
+            document.getElementById('airMeasurement').value = '';
+            calculate();
+        }
+
+        // 初期計算実行
+        calculate();
+    </script>
+</body>
+</html>
